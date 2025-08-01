@@ -17,6 +17,8 @@
         <hutool.version>5.8.38</hutool.version>
         <lombok.version>1.18.38</lombok.version>
         <fastjson.version>2.0.57</fastjson.version>
+        <h2.version>2.3.232</h2.version>
+        <mybatis.version>3.5.12</mybatis.version>
     </properties>
 
     <dependencies>
@@ -58,6 +60,16 @@
             <groupId>com.alibaba.fastjson2</groupId>
             <artifactId>fastjson2</artifactId>
             <version>${fastjson.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <version>${h2.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.baomidou</groupId>
+            <artifactId>mybatis-plus-spring-boot3-starter</artifactId>
+            <version>${mybatis.version}</version>
         </dependency>
     </dependencies>
 

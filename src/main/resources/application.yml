@@ -7,6 +7,11 @@ spring:
     date-format: yyyy-MM-dd HH:mm:ss
     time-zone: GMT+8
   data:
+    datasource:
+      driver-class-name: org.h2.Driver
+      url: jdbc:h2:file:/data/yww;AUTO_RECONNECT=TRUE
+      username: root
+      password: password
     # redis配置
     redis:
       database: 7
