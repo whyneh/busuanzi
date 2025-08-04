@@ -1,20 +1,15 @@
 package com.yww.busuanzi.redis;
 
-import cn.hutool.crypto.digest.DigestUtil;
-import com.alibaba.fastjson2.JSON;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.Cache;
 import org.springframework.cache.annotation.CachingConfigurerSupport;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.cache.interceptor.CacheErrorHandler;
-import org.springframework.cache.interceptor.KeyGenerator;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
 
-import java.util.HashMap;
-import java.util.Map;
 
 
 /**
@@ -51,32 +46,6 @@ public class RedisConfig extends CachingConfigurerSupport {
         template.afterPropertiesSet();
         return template;
 
-    }
-
-    /**
-     * 自定义缓存key生成策略，默认将使用该策略
-     */
-    @Bean
-    @Override
-    public KeyGenerator keyGenerator() {
-        return (target, method, params) -> {
-            Map<String, Object> container = new HashMap<>(4);
-            Class<?> targetClassClass = target.getClass();
-            // 类地址
-            container.put("class", targetClassClass.toGenericString());
-            // 方法名称
-            container.put("methodName", method.getName());
-            // 包名称
-            container.put("package", targetClassClass.getPackage());
-            // 参数列表
-            for (int i = 0; i < params.length; i++) {
-                container.put(String.valueOf(i), params[i]);
-            }
-            // 转为JSON字符串
-            String jsonString = JSON.toJSONString(container);
-            // 做SHA256 Hash计算，得到一个SHA256摘要作为Key
-            return DigestUtil.sha256Hex(jsonString);
-        };
     }
 
     /**

@@ -1,5 +1,6 @@
 package com.yww.busuanzi.redis;
 
+import cn.hutool.core.util.StrUtil;
 import com.alibaba.fastjson2.JSON;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,59 +32,51 @@ public class RedisCache {
     }
 
     /**
-     * 普通缓存
+     * 对指定 key 的值进行自增操作
+     * 如果 key 不存在，Redis 会自动创建并初始化为 0，然后自增为 1
      *
-     * @param key 键
+     * @param key   键
+     * @return      自增之后的值
      */
-    public void setStr(String key, String value) {
-        stringRedisTemplate.opsForValue().set(key, value);
+    public Long incrementCounter(String key) {
+        return stringRedisTemplate.opsForValue().increment(key);
     }
 
     /**
-     * 普通缓存
+     * 根据Key获取值
      *
-     * @param key 键
+     * @param key   键
+     * @return      存储的值
      */
-    public void setStr(String key, String value, long time) {
-        stringRedisTemplate.opsForValue().set(key, value, time, TimeUnit.MINUTES);
+    public Long getStringValue(String key) {
+        String value = stringRedisTemplate.opsForValue().get(key);
+        return StrUtil.isNotBlank(value) ? Long.parseLong(value) : 0L;
     }
 
     /**
-     * 普通缓存
+     * 添加一个值进Set集合当中
      *
-     * @param key 键
+     * @param key       集合键
+     * @param value     添加的值
+     * @param days      过期时间（单位天）
      */
-    public void setStr(String key, String value, long time, TimeUnit timeUnit) {
-        stringRedisTemplate.opsForValue().set(key, value, time, timeUnit);
+    public void addSet(String key, String value, long days) {
+        // 如果不存在这个集合，初始化过期时间
+        if (!stringRedisTemplate.hasKey(key)) {
+            stringRedisTemplate.expire(key, days, TimeUnit.DAYS);
+        }
+        stringRedisTemplate.opsForSet().add(key, value);
     }
 
     /**
-     * 普通缓存获取
+     * 判断一个Set集合当中是否存在该值
      *
-     * @param key 键
-     * @return 值
+     * @param key       集合键
+     * @param value     判断的值
+     * @return          存在返回True
      */
-    public String getStr(String key) {
-        return key == null ? null : stringRedisTemplate.opsForValue().get(key);
-    }
-
-    /**
-     * 普通缓存获取
-     *
-     * @param key 键
-     * @return 值
-     */
-    public <T> T getStr(String key, Class<T> clazz) {
-        return key == null ? null : JSON.parseObject(stringRedisTemplate.opsForValue().get(key), clazz);
-    }
-
-    /**
-     * 普通缓存删除
-     *
-     * @param key 键
-     */
-    public void deleteStr(String key) {
-        stringRedisTemplate.delete(key);
+    public Boolean isSetMember(String key, String value) {
+        return stringRedisTemplate.opsForSet().isMember(key, value);
     }
 
 }
