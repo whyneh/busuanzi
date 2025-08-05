@@ -1,6 +1,5 @@
 package com.yww.busuanzi.util;
 
-import com.baomidou.mybatisplus.core.incrementer.IdentifierGenerator;
 import com.github.yitter.contract.IdGeneratorOptions;
 import com.github.yitter.idgen.YitIdHelper;
 import jakarta.annotation.PostConstruct;
@@ -16,7 +15,7 @@ import org.springframework.stereotype.Component;
  * @since 2025/8/4
  */
 @Component
-public class IdGenerator  {
+public class IdGenerator {
 
     @PostConstruct
     public void idGeneratorRegister() {

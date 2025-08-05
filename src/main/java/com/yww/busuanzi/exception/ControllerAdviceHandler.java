@@ -1,9 +1,10 @@
 package com.yww.busuanzi.exception;
 
 import cn.hutool.core.util.StrUtil;
-import com.alibaba.fastjson2.JSONObject;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
@@ -27,17 +28,14 @@ public class ControllerAdviceHandler {
      * @return 异常信息
      */
     @ExceptionHandler(value = BusuanziException.class)
-    public JSONObject busuanziExceptionHandler(BusuanziException e, HttpServletRequest request) {
+    public ResponseEntity<?> busuanziExceptionHandler(BusuanziException e, HttpServletRequest request) {
         log.error(">> busuanzi exception: {}, {}, {}", request.getRequestURI(), e.getCode(), e.getMessage());
         String errMessage = e.getMessage();
         // 防止空的错误信息
         if (StrUtil.isBlank(errMessage)) {
             errMessage = "服务出现未知错误！";
         }
-        JSONObject res = new JSONObject();
-        res.put("code", e.getCode());
-        res.put("message", errMessage);
-        return res;
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errMessage);
     }
 
     /**
@@ -47,12 +45,9 @@ public class ControllerAdviceHandler {
      * @return 异常信息
      */
     @ExceptionHandler(value = Exception.class)
-    public JSONObject defaultErrorHandler(Exception e, HttpServletRequest request) {
+    public ResponseEntity<?> defaultErrorHandler(Exception e, HttpServletRequest request) {
         log.error(">> 服务器内部错误 {}", request.getRequestURI(), e);
-        JSONObject res = new JSONObject();
-        res.put("code", 500);
-        res.put("message", "服务器内部错误");
-        return res;
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("服务器内部错误");
     }
 
 

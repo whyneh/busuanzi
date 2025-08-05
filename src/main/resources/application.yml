@@ -7,11 +7,6 @@ spring:
     date-format: yyyy-MM-dd HH:mm:ss
     time-zone: GMT+8
   data:
-    datasource:
-      driver-class-name: org.h2.Driver
-      url: jdbc:h2:file:/data/yww;AUTO_RECONNECT=TRUE
-      username: root
-      password: password
     # redis配置
     redis:
       database: 7
@@ -21,11 +16,11 @@ spring:
       timeout: 5000
       lettuce:
         pool:
-          #连接池最大连接数（使用负值表示没有限制）
+          # 连接池最大连接数（使用负值表示没有限制）
           max-active: 8
-          #连接池最大阻塞等待时间（使用负值表示没有限制）
+          # 连接池最大阻塞等待时间（使用负值表示没有限制）
           max-wait: 3000
-          #连接池中的最大空闲连接
+          # 连接池中的最大空闲连接
           max-idle: 10
-          #连接池中的最小空闲连接
+          # 连接池中的最小空闲连接
           min-idle: 2

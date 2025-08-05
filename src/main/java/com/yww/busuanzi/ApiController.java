@@ -11,10 +11,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestHeader;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 /**
  * <p>
@@ -28,14 +25,15 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api")
+@CrossOrigin(exposedHeaders = {"Authorization, X-Referer"})
 public class ApiController {
 
     public final RedisCache redisCache;
 
     @GetMapping
     public ResponseEntity<?> api(HttpServletRequest request,
-                                 @RequestHeader("Referer") String referer,
-                                 @RequestHeader("Authorization") String authorization) {
+                                 @RequestHeader(value = "X-Referer", required = false) String referer,
+                                 @RequestHeader(value = "Authorization", required = false) String authorization) {
         // 如果没有网站信息
         if (StrUtil.isBlank(referer)) {
             return ResponseEntity.badRequest().body("缺少Refer请求头信息");
@@ -83,7 +81,29 @@ public class ApiController {
         res.put("site_uv", siteUv);
         res.put("page_uv", pageUv);
 
-        return ResponseEntity.ok().header("Authorization", authorization).body(res);
+        return ResponseEntity.ok()
+                .header("Authorization", authorization)
+                .header("X-Referer", referer)
+                .body(res);
+    }
+
+    @GetMapping("/getStatistics")
+    public ResponseEntity<?> getStatistics(@RequestHeader(value = "X-Referer", required = false) String referer) {
+        // 如果没有网站信息
+        if (StrUtil.isBlank(referer)) {
+            return ResponseEntity.badRequest().body("缺少Refer请求头信息");
+        }
+        // 获取网站host
+        String host = URLUtil.getHost(referer);
+
+        JSONObject res = new JSONObject();
+        res.put("site_pv", redisCache.getStringValue("pv:" + host));
+        res.put("page_pv", redisCache.getStringValue("pv:page:" + referer));
+        res.put("site_uv", redisCache.getStringValue("uv:" + host));
+        res.put("page_uv", redisCache.getStringValue("uv:page:" + referer));
+        return ResponseEntity.ok()
+                .header("X-Referer", referer)
+                .body(res);
     }
 
 }
