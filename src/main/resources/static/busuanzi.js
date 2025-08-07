@@ -42,12 +42,12 @@
                 STATISTICS.forEach(item => {
                     // 查找对应统计项的页面元素
                     let element = document.getElementById(ITEM_VALUE + item);
-                    if (element != null) {
+                    if (element) {
                         element.innerHTML = data[item];
                     }
                     // 查找统计容器元素，使其显形，去除隐藏
                     let container = document.getElementById(ITEM_CONTAINER + item);
-                    if (container != null) {
+                    if (container) {
                         container.style.display = "inline";
                     }
                 });
