@@ -2,7 +2,7 @@
     // 统计项名称列明
     const STATISTICS = ["site_pv", "page_pv", "site_uv", "page_uv"];
     // 定义API地址，请自行修改
-    const API_URL = "http://127.0.0.1:10010/api";
+    const API_URL = "http://127.0.0.1:10010/busuanzi/api";
     // localStorage中存储身份标识的key
     const LOCALSTORAGE_KEY = "bsz-id";
     // busuanzi的元素容器和元素值前缀

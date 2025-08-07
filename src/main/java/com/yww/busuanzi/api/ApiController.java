@@ -4,15 +4,10 @@ import cn.hutool.core.convert.Convert;
 import cn.hutool.core.util.StrUtil;
 import com.alibaba.fastjson2.JSONObject;
 import com.github.yitter.idgen.YitIdHelper;
-import jakarta.servlet.http.Cookie;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.Arrays;
 
 /**
  * <p>
@@ -30,6 +25,11 @@ import java.util.Arrays;
 public class ApiController {
 
     private final ApiService service;
+
+    @GetMapping("hello")
+    public String hello() {
+        return "hello busuanzi";
+    }
 
     /**
      *  访问页面，获取页面数据，并且进行数据增长

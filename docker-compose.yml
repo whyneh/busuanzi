@@ -1,0 +1,36 @@
+version: '3.8'
+
+services:
+  busuanzi-redis:
+    image: redis:7-alpine
+    container_name: busuanzi-redis
+    ports:
+      - "16379:6379"
+    volumes:
+      # 持久化数据目录映射到宿主机
+      - /data/docker/busuanzi/data:/data/redis
+      # 服务日志
+      - /data/docker/busuanzi/log:/data/log
+      # Redis配置文件映射到宿主机
+      - /data/docker/busuanzi/redis.conf:/usr/local/etc/redis/redis.conf
+    command: redis-server /usr/local/etc/redis/redis.conf --appendonly yes
+    restart: unless-stopped
+    networks:
+      - busuanzi-network
+
+  busuanzi:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    container_name: busuanzi
+    ports:
+      - "10010:10010"
+    depends_on:
+      - busuanzi-redis
+    restart: unless-stopped
+    networks:
+      - busuanzi-network
+
+networks:
+  busuanzi-network:
+    driver: bridge
