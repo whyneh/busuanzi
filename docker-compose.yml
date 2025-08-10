@@ -1,15 +1,17 @@
 version: '3.8'
 
 services:
+  # 这个名字修改了，下面依赖服务名也要修改，springboot配置文件Redis连接服务名也要修改
   busuanzi-redis:
     image: redis:7-alpine
     container_name: busuanzi-redis
+    # 可自行修改宿主机端口，同一个网络服务是联通的，不映射端口直接删除没有影响
     ports:
       - "16379:6379"
     volumes:
       # 持久化数据目录映射到宿主机
       - /data/docker/busuanzi/data:/data/redis
-      # 服务日志
+      # 日志映射到宿主机
       - /data/docker/busuanzi/log:/data/log
       # Redis配置文件映射到宿主机
       - /data/docker/busuanzi/redis.conf:/usr/local/etc/redis/redis.conf
@@ -19,7 +21,7 @@ services:
       - busuanzi-network
 
   busuanzi:
-    build: 
+    build:
       context: .
       dockerfile: Dockerfile
     container_name: busuanzi

@@ -66,7 +66,7 @@ public class ApiController {
     }
 
     /**
-     *  适配原版busuanzi的请求
+     *  适配原版busuanzi的原版请求
      */
     @GetMapping("/jsonp")
     public ResponseEntity<?> busuanzi(@CookieValue(name = "busuanziId", required = false) String busuanziId,
