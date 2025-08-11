@@ -42,6 +42,16 @@ public class RedisCache {
     }
 
     /**
+     * 根据Key设置值
+     *
+     * @param   key     键
+     * @param   value   值
+     */
+    public void add(String key, String value) {
+        stringRedisTemplate.opsForValue().set(key, value);
+    }
+
+    /**
      * 根据Key获取值
      *
      * @param key   键

@@ -32,7 +32,9 @@ public class SitemapUtil {
                 .header("Referer", url)
                 .form("jsonpCallback", "BusuanziCallback_921338913213")
                 .execute();
-        System.out.println(response.body());
+        String body = response.body();
+
+        System.out.println(body.substring(body.indexOf('{', 4), body.indexOf('}') + 1));
     }
 
     /**

@@ -1,14 +1,23 @@
 package com.yww.busuanzi.api;
 
 import cn.hutool.core.date.DateUtil;
+import cn.hutool.core.io.FileUtil;
+import cn.hutool.core.lang.UUID;
 import cn.hutool.core.util.StrUtil;
+import cn.hutool.http.HttpResponse;
+import cn.hutool.http.HttpUtil;
+import com.alibaba.fastjson2.JSON;
 import com.alibaba.fastjson2.JSONObject;
 import com.yww.busuanzi.redis.RedisCache;
+import com.yww.busuanzi.util.SitemapUtil;
 import com.yww.busuanzi.util.URLUtil;
-import jakarta.servlet.http.Cookie;
+import lombok.Cleanup;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.util.List;
 
 /**
  * <p>
@@ -106,4 +115,38 @@ public class ApiService {
         );
     }
 
+    public void initBySitemap(MultipartFile file) {
+        String filePath = System.getProperty("user.dir") + "/temp/" + UUID.fastUUID() + ".xml";
+        try {
+            FileUtil.writeBytes(file.getBytes(), filePath);
+            List<String> links = SitemapUtil.parseSitemapXml(filePath);
+
+            links.forEach(link -> {
+                String api = "https://busuanzi.ibruce.info/busuanzi";
+                @Cleanup
+                HttpResponse response = HttpUtil.createGet(api)
+                        .header("Referer", link)
+                        .form("jsonpCallback", "BusuanziCallback_921338913213")
+                        .execute();
+                String body = response.body();
+                String host = URLUtil.getHost(link);
+                // 截取script脚本中的数据
+                JSONObject jsonObject = JSON.parseObject(body.substring(body.indexOf('{', 4), body.indexOf('}') + 1));
+                redisCache.add("pv:" + host, jsonObject.getString("site_pv"));
+                redisCache.add("pv:page:" + link, jsonObject.getString("page_pv"));
+                redisCache.add("uv:" + host, jsonObject.getString("site_uv"));
+                // 避免出现限流等情况，缓一缓
+                try {
+                    Thread.sleep(200);
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
+                log.info("成功初始化url【{}】的数据", link);
+            });
+        } catch (Exception e) {
+            log.error("初始化失败：", e);
+        } finally {
+            FileUtil.del(filePath);
+        }
+    }
 }

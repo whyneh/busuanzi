@@ -1,13 +1,17 @@
 package com.yww.busuanzi.api;
 
 import cn.hutool.core.convert.Convert;
+import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.util.StrUtil;
 import com.alibaba.fastjson2.JSONObject;
 import com.github.yitter.idgen.YitIdHelper;
+import com.yww.busuanzi.redis.RedisCache;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 /**
  * <p>
@@ -23,6 +27,9 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/busuanzi/api")
 @CrossOrigin(exposedHeaders = {"Authorization, X-Referer"})
 public class ApiController {
+
+    @Value("${busuanzi.api-key}")
+    private String API_KEY;
 
     private final ApiService service;
 
@@ -91,6 +98,27 @@ public class ApiController {
         return ResponseEntity.ok()
                 .header("Set-Cookie", StrUtil.format(cookie, authorization))
                 .body(service.toJSONP(data, jsonpCallback));
+    }
+
+    /**
+     *  适配原版busuanzi的原版请求
+     */
+    @PostMapping("/initBySitemap")
+    public ResponseEntity<?> initBySitemap(@RequestHeader(value = "X-ApiKey", required = false) String apiKey,
+                                      @RequestPart MultipartFile file) {
+        if (!API_KEY.equals(apiKey)) {
+            return ResponseEntity.badRequest().body("密钥不能为空");
+        }
+        if (file == null || file.isEmpty()) {
+            return ResponseEntity.badRequest().body("文件不能为空");
+        }
+        String extName = FileUtil.extName(file.getOriginalFilename());
+        if (!"xml".equals(extName)) {
+            return ResponseEntity.badRequest().body("文件格式出错");
+        }
+
+        service.initBySitemap(file);
+        return ResponseEntity.ok().build();
     }
 
 }
