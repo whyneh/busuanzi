@@ -5,10 +5,10 @@ import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.util.StrUtil;
 import com.alibaba.fastjson2.JSONObject;
 import com.github.yitter.idgen.YitIdHelper;
-import com.yww.busuanzi.redis.RedisCache;
+import com.yww.busuanzi.annotation.PreAuthorize;
+import com.yww.busuanzi.util.RefererUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -28,15 +28,7 @@ import org.springframework.web.multipart.MultipartFile;
 @CrossOrigin(exposedHeaders = {"Authorization, X-Referer"})
 public class ApiController {
 
-    @Value("${busuanzi.api-key}")
-    private String API_KEY;
-
     private final ApiService service;
-
-    @GetMapping("hello")
-    public String hello() {
-        return "hello busuanzi";
-    }
 
     /**
      *  访问页面，获取页面数据，并且进行数据增长
@@ -52,10 +44,17 @@ public class ApiController {
         if (StrUtil.isBlank(authorization)) {
             authorization = Convert.toStr(YitIdHelper.nextId());
         }
+        // 获取网站地址和网站资源地址
+        String siteUrl = RefererUtil.getSiteUrl(referer, false);
+        String sitePathUrl = RefererUtil.getSiteUrl(referer, true);
+        if (StrUtil.isBlank(siteUrl) || StrUtil.isBlank(sitePathUrl)) {
+            return ResponseEntity.badRequest().body("来源地址解析出错");
+        }
+
         return ResponseEntity.ok()
                 .header("Authorization", authorization)
-                .header("X-Referer", referer)
-                .body(service.api(referer, authorization));
+                .header("X-Referer", sitePathUrl)
+                .body(service.api(siteUrl, sitePathUrl, authorization));
     }
 
     /**
@@ -67,9 +66,16 @@ public class ApiController {
         if (StrUtil.isBlank(referer)) {
             return ResponseEntity.badRequest().body("缺少Refer请求头信息");
         }
+        // 获取网站地址和网站资源地址
+        String siteUrl = RefererUtil.getSiteUrl(referer, false);
+        String sitePathUrl = RefererUtil.getSiteUrl(referer, true);
+        if (StrUtil.isBlank(siteUrl) || StrUtil.isBlank(sitePathUrl)) {
+            return ResponseEntity.badRequest().body("来源地址解析出错");
+        }
+
         return ResponseEntity.ok()
-                .header("X-Referer", referer)
-                .body(service.getStatistics(referer));
+                .header("X-Referer", sitePathUrl)
+                .body(service.getStatistics(siteUrl, sitePathUrl));
     }
 
     /**
@@ -89,11 +95,18 @@ public class ApiController {
             authorization = Convert.toStr(YitIdHelper.nextId());
         }
 
-        JSONObject data = service.api(referer, authorization);
+        // 获取网站地址和网站资源地址
+        String siteUrl = RefererUtil.getSiteUrl(referer, false);
+        String sitePathUrl = RefererUtil.getSiteUrl(referer, true);
+        if (StrUtil.isBlank(siteUrl) || StrUtil.isBlank(sitePathUrl)) {
+            return ResponseEntity.badRequest().body("来源地址解析出错");
+        }
+
+        // 封装一层JSONP
+        JSONObject data = service.api(siteUrl, sitePathUrl, authorization);
 
         // 设置cookie
         String cookie = "busuanziId={}; Path=/; httponly; secure; SameSite=None; Secure";
-
         // 获取cookie中的数据，用来代替
         return ResponseEntity.ok()
                 .header("Set-Cookie", StrUtil.format(cookie, authorization))
@@ -103,12 +116,9 @@ public class ApiController {
     /**
      *  适配原版busuanzi的原版请求
      */
+    @PreAuthorize
     @PostMapping("/initBySitemap")
-    public ResponseEntity<?> initBySitemap(@RequestHeader(value = "X-ApiKey", required = false) String apiKey,
-                                      @RequestPart MultipartFile file) {
-        if (!API_KEY.equals(apiKey)) {
-            return ResponseEntity.badRequest().body("密钥不能为空");
-        }
+    public ResponseEntity<?> initBySitemap(@RequestPart MultipartFile file) {
         if (file == null || file.isEmpty()) {
             return ResponseEntity.badRequest().body("文件不能为空");
         }
@@ -116,7 +126,6 @@ public class ApiController {
         if (!"xml".equals(extName)) {
             return ResponseEntity.badRequest().body("文件格式出错");
         }
-
         service.initBySitemap(file);
         return ResponseEntity.ok().build();
     }

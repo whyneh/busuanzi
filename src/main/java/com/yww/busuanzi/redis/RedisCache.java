@@ -61,6 +61,16 @@ public class RedisCache {
         String value = stringRedisTemplate.opsForValue().get(key);
         return StrUtil.isNotBlank(value) ? Long.parseLong(value) : 0L;
     }
+    
+    /**
+     * 根据Key获取字符串值
+     *
+     * @param key   键
+     * @return      存储的字符串值
+     */
+    public String getStringValueAsString(String key) {
+        return stringRedisTemplate.opsForValue().get(key);
+    }
 
     /**
      * 添加一个值进Set集合当中

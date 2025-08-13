@@ -35,7 +35,7 @@ public class ControllerAdviceHandler {
         if (StrUtil.isBlank(errMessage)) {
             errMessage = "服务出现未知错误！";
         }
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errMessage);
+        return ResponseEntity.status(e.getCode()).body(errMessage);
     }
 
     /**

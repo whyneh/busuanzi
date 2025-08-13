@@ -9,8 +9,8 @@ import cn.hutool.http.HttpUtil;
 import com.alibaba.fastjson2.JSON;
 import com.alibaba.fastjson2.JSONObject;
 import com.yww.busuanzi.redis.RedisCache;
+import com.yww.busuanzi.util.RefererUtil;
 import com.yww.busuanzi.util.SitemapUtil;
-import com.yww.busuanzi.util.URLUtil;
 import lombok.Cleanup;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -39,37 +39,34 @@ public class ApiService {
 
     public final RedisCache redisCache;
 
-    public JSONObject api(String referer, String authorization) {
+    public JSONObject api(String siteUrl, String sitePathUrl, String authorization) {
         String today = DateUtil.today();
-        log.info("time: 【{}】, referer: 【{}】, authorization: 【{}】", today, referer, authorization);
+        log.info("time: 【{}】, referer: 【{}】, authorization: 【{}】", today, sitePathUrl, authorization);
 
-        // 获取网站host
-        String host = URLUtil.getHost(referer);
+        // 网站PV自增（保持使用String类型）
+        Long sitePv = redisCache.incrementCounter(SITE_PV + siteUrl);
 
-        // 网站PV自增
-        Long sitePv = redisCache.incrementCounter(SITE_PV + host);
-
-        // 网站页面PV自增
-        Long pagePv = redisCache.incrementCounter(PAGE_PV + referer);
+        // 网站页面PV自增（使用ZSet类型）
+        Long pagePv = redisCache.incrementCounter(PAGE_PV + sitePathUrl);
 
         // 网站UV
-        String siteUvSetKey = "uvtime:" + today + ":" + host;
+        String siteUvSetKey = "uvtime:" + today + ":" + siteUrl;
         Long siteUv;
         if (!redisCache.isSetMember(siteUvSetKey, authorization)) {
             redisCache.addSet(siteUvSetKey, authorization, 7);
-            siteUv = redisCache.incrementCounter(SITE_UV + host);
+            siteUv = redisCache.incrementCounter(SITE_UV + siteUrl);
         } else {
-            siteUv = redisCache.getStringValue(SITE_UV + host);
+            siteUv = redisCache.getStringValue(SITE_UV + siteUrl);
         }
 
         //  页面UV
-        String pageUvSetKey = "uvtime:page:" + today + ":" + referer;
+        String pageUvSetKey = "uvtime:page:" + today + ":" + sitePathUrl;
         Long pageUv;
         if (!redisCache.isSetMember(pageUvSetKey, authorization)) {
             redisCache.addSet(pageUvSetKey, authorization, 7);
-            pageUv = redisCache.incrementCounter(PAGE_UV + referer);
+            pageUv = redisCache.incrementCounter(PAGE_UV + sitePathUrl);
         } else {
-            pageUv = redisCache.getStringValue(PAGE_UV + referer);
+            pageUv = redisCache.getStringValue(PAGE_UV + sitePathUrl);
         }
 
         // 构建结果
@@ -81,14 +78,12 @@ public class ApiService {
         return res;
     }
 
-    public JSONObject getStatistics(String referer) {
-        // 获取网站host
-        String host = URLUtil.getHost(referer);
+    public JSONObject getStatistics(String siteUrl, String sitePathUrl) {
         JSONObject res = new JSONObject();
-        res.put("site_pv", redisCache.getStringValue(SITE_PV + host));
-        res.put("page_pv", redisCache.getStringValue(PAGE_PV + referer));
-        res.put("site_uv", redisCache.getStringValue(SITE_UV + host));
-        res.put("page_uv", redisCache.getStringValue(PAGE_UV + referer));
+        res.put("site_pv", redisCache.getStringValue(SITE_PV + siteUrl));
+        res.put("page_pv", redisCache.getStringValue(PAGE_PV + sitePathUrl));
+        res.put("site_uv", redisCache.getStringValue(SITE_UV + siteUrl));
+        res.put("page_uv", redisCache.getStringValue(PAGE_UV + sitePathUrl));
         return res;
     }
 
@@ -129,15 +124,22 @@ public class ApiService {
                         .form("jsonpCallback", "BusuanziCallback_921338913213")
                         .execute();
                 String body = response.body();
-                String host = URLUtil.getHost(link);
                 // 截取script脚本中的数据
-                JSONObject jsonObject = JSON.parseObject(body.substring(body.indexOf('{', 4), body.indexOf('}') + 1));
-                redisCache.add("pv:" + host, jsonObject.getString("site_pv"));
-                redisCache.add("pv:page:" + link, jsonObject.getString("page_pv"));
-                redisCache.add("uv:" + host, jsonObject.getString("site_uv"));
+                JSONObject busuanzi = JSON.parseObject(body.substring(body.indexOf('{', 4), body.indexOf('}') + 1));
+
+                // 获取网站地址和网站资源地址
+                String siteUrl = RefererUtil.getSiteUrl(link, false);
+                String sitePathUrl = RefererUtil.getSiteUrl(link, true);
+                if (StrUtil.isBlank(siteUrl) || StrUtil.isBlank(sitePathUrl)) {
+                    return;
+                }
+                redisCache.add(SITE_PV + siteUrl, busuanzi.getString("site_pv"));
+                // 对于页面PV，我们使用ZSet存储
+                redisCache.add(PAGE_PV + sitePathUrl, busuanzi.getString("page_pv"));
+                redisCache.add(SITE_UV + siteUrl, busuanzi.getString("site_uv"));
                 // 避免出现限流等情况，缓一缓
                 try {
-                    Thread.sleep(200);
+                    Thread.sleep(500);
                 } catch (InterruptedException e) {
                     throw new RuntimeException(e);
                 }
@@ -149,4 +151,5 @@ public class ApiService {
             FileUtil.del(filePath);
         }
     }
+
 }
