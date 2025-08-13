@@ -12,6 +12,7 @@ RUN apk add tzdata \
 # 定义应用相关环境变量
 ENV JAVA_OPTS="-Xms512m -Xmx2048m -Xmn614m -Xss256k -XX:SurvivorRatio=6 -XX:+UseG1GC -XX:MetaspaceSize=256m -XX:MaxMetaspaceSize=512m"
 ENV APP_HOME=/app
+ENV SPRING_PROFILES_ACTIVE=prod
 
 # 创建非root用户并设置权限
 RUN adduser -D appuser && \
@@ -29,4 +30,4 @@ COPY busuanzi-1.0.jar $APP_HOME/app.jar
 EXPOSE 10010
 
 # 启动命令（使用环境变量配置 JVM 参数）
-ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar app.jar"]
+ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -Dspring.profiles.active=$SPRING_PROFILES_ACTIVE -jar app.jar"]

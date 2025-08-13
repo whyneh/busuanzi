@@ -17,8 +17,12 @@ import java.net.URI;
 public class RefererUtil {
 
     public static void main(String[] args) {
-        System.out.println(getSiteUrl("https://www.tongyi.com/index.html/?sessionId=46bd6372c21c4414a9e5a12925f74365", false));
-        System.out.println(getSiteUrl("https://www.tongyi.com/about/?sessionId=46bd6372c21c4414a9e5a12925f74365", true));
+        System.out.println(getSiteUrl("https://yww52.com", false));
+        System.out.println(getSiteUrl("https://yww52.com", true));
+        System.out.println(getSiteUrl("https://comment.yww52.com/path/page.html", false));
+        System.out.println(getSiteUrl("https://comment.yww52.com/path/page.html", true));
+        System.out.println(getSiteUrl("http://localhost:8080/test/index.html", false));
+        System.out.println(getSiteUrl("http://localhost:8080/test/index.html", true));
     }
 
     /**
@@ -36,13 +40,20 @@ public class RefererUtil {
             URI uri = URLUtil.toURI(normalize);
             StringBuilder url = new StringBuilder();
             url.append(uri.getScheme()).append("://").append(uri.getHost());
-            // 有端口的情况
+            // 有端口的情况（非默认端口）
             if (uri.getPort() != -1) {
                 url.append(":").append(uri.getPort());
             }
             if (hasPath) {
-                url.append(uri.getPath());
+                // 如果有路径则添加路径，如果没有路径则添加根路径
+                String path = uri.getPath();
+                if (path != null && !path.isEmpty()) {
+                    url.append(path);
+                } else {
+                    url.append("/");
+                }
             } else {
+                // 如果不带路径，则只添加根路径
                 url.append("/");
             }
             return url.toString();
